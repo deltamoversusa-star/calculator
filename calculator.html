@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Free Moving Estimate Tool</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f7f9fc;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: auto;
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 15px;
+        color: #1e3a8a;
+    }
+
+    h2 {
+        margin-top: 30px;
+        color: #1e3a8a;
+        border-left: 4px solid #60a5fa;
+        padding-left: 10px;
+    }
+
+    label {
+        font-weight: bold;
+        display: block;
+        margin-top: 15px;
+        color: #111827;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 6px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        font-size: 15px;
+    }
+
+    textarea {
+        height: 80px;
+    }
+
+    .result-box {
+        margin-top: 20px;
+        padding: 18px;
+        background: #e5f0ff;
+        border-left: 5px solid #3b82f6;
+        border-radius: 8px;
+    }
+
+    .submit-btn {
+        background: #2563eb;
+        color: white;
+        padding: 14px;
+        margin-top: 20px;
+        border: none;
+        width: 100%;
+        font-size: 18px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .submit-btn:hover {
+        background: #1e40af;
+    }
+
+    .success-message {
+        margin-top: 20px;
+        padding: 15px;
+        background: #d1fae5;
+        border-left: 5px solid #10b981;
+        border-radius: 8px;
+        font-weight: bold;
+        color: #065f46;
+        display: none;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Free Moving Estimate Tool</h1>
+
+    <!-- INPUTS -->
+    <h2>Move Details</h2>
+
+    <label>Bedrooms / Rooms</label>
+    <input type="number" id="rooms" value="4"/>
+
+    <label>Estimated Labor Hours</label>
+    <input type="number" id="laborHours" value="10"/>
+
+    <label>Extra Movers Needed</label>
+    <input type="number" id="extraMovers" value="0"/>
+
+    <label>Total Movers</label>
+    <input type="number" id="movers" value="2"/>
+
+    <label>Packing Hours Needed</label>
+    <input type="number" id="packingHours" value="3"/>
+
+    <label>Piano or Gun Safe?</label>
+    <select id="piano">
+        <option>No</option>
+        <option>Yes</option>
+    </select>
+
+    <h2>Move Locations</h2>
+
+    <label>From ZIP Code</label>
+    <input type="text" id="fromZip"/>
+
+    <label>To ZIP Code</label>
+    <input type="text" id="toZip"/>
+
+    <label>Estimated One-Way Miles</label>
+    <input type="number" id="miles" value="27"/>
+
+    <label>One-Way Drive Hours</label>
+    <input type="number" id="driveHours" value="0.08"/>
+
+    <label>Round-Trip Drive Hours</label>
+    <input type="number" id="roundTrip" value="0.16"/>
+
+    <!-- RESULT BOX -->
+    <div class="result-box">
+        <div><strong>Subtotal Labor:</strong> $<span id="subtotalLabor">0</span></div>
+        <div><strong>Fuel / Drive Time Cost:</strong> $<span id="fuelCost">0</span></div>
+        <hr>
+        <div><strong>Total Before Tax:</strong> $<span id="totalCost">0</span></div>
+        <br>
+        <div><strong>Estimated Range:</strong></div>
+        <div>Low End: $<span id="lowEnd">0</span></div>
+        <div>High End: $<span id="highEnd">0</span></div>
+        <div><strong>Final Quote Range:</strong> <span id="quoteRange"></span></div>
+    </div>
+
+    <!-- SUBMISSION FORM -->
+    <h2>Request Your Quote</h2>
+
+    <form id="quoteForm" action="https://formspree.io/f/mzznaayj" method="POST">
+
+        <label>Your Name</label>
+        <input name="name" required>
+
+        <label>Phone Number</label>
+        <input name="phone" required>
+
+        <label>Email Address</label>
+        <input type="email" name="email" required>
+
+        <label>Move Date</label>
+        <input type="date" name="moveDate" required>
+
+        <label>Additional Notes</label>
+        <textarea name="notes"></textarea>
+
+        <!-- Hidden fields populated by JS -->
+        <input type="hidden" name="fromZip" id="hiddenFromZip">
+        <input type="hidden" name="toZip" id="hiddenToZip">
+        <input type="hidden" name="rooms" id="hiddenRooms">
+        <input type="hidden" name="quoteRange" id="hiddenQuoteRange">
+
+        <button class="submit-btn" type="submit">Submit Quote Request</button>
+    </form>
+
+    <div class="success-message" id="successMessage">
+        Thank you! Your quote request was sent successfully. We will contact you shortly.
+    </div>
+
+</div>
+
+<script>
+    // CONSTANT RATES
+    const RATE_LOCAL_2MEN = 130;
+    const RATE_EXTRA_MOVER = 45;
+    const RATE_PACKING = 49;
+    const RATE_FUEL_UNDER35 = 130;
+    const RATE_FUEL_OVER35 = 150;
+    const FUEL_MIN_HOURS = 2;
+    const PIANO_FEE = 150;
+
+    function recalc() {
+        let movers = parseFloat(document.getElementById("movers").value);
+        let laborHours = parseFloat(document.getElementById("laborHours").value);
+        let packingHours = parseFloat(document.getElementById("packingHours").value);
+        let piano = document.getElementById("piano").value;
+        let miles = parseFloat(document.getElementById("miles").value);
+        let roundTrip = parseFloat(document.getElementById("roundTrip").value);
+
+        // LABOR
+        let laborCost = laborHours * movers * RATE_LOCAL_2MEN;
+
+        // PACKING
+        let packingCost = packingHours * RATE_PACKING;
+
+        // PIANO / SAFE
+        let pianoCost = (piano === "Yes") ? PIANO_FEE : 0;
+
+        let subtotal = laborCost + packingCost + pianoCost;
+
+        // FUEL
+        let fuelCost = 0;
+        if (miles < 35) {
+            let billableHours = Math.max(roundTrip, FUEL_MIN_HOURS);
+            fuelCost = billableHours * RATE_FUEL_UNDER35;
+        } else {
+            fuelCost = roundTrip * RATE_FUEL_OVER35;
+        }
+
+        let total = subtotal + fuelCost;
+
+        // RANGE
+        let lowEnd = Math.round(total * 0.95);
+        let highEnd = Math.round(total * 1.25);
+
+        document.getElementById("subtotalLabor").innerText = subtotal.toFixed(0);
+        document.getElementById("fuelCost").innerText = fuelCost.toFixed(0);
+        document.getElementById("totalCost").innerText = total.toFixed(0);
+        document.getElementById("lowEnd").innerText = lowEnd;
+        document.getElementById("highEnd").innerText = highEnd;
+
+        let rangeText = `$${lowEnd} – $${highEnd}`;
+        document.getElementById("quoteRange").innerText = rangeText;
+
+        // Populate hidden fields for form
+        document.getElementById("hiddenFromZip").value = document.getElementById("fromZip").value;
+        document.getElementById("hiddenToZip").value = document.getElementById("toZip").value;
+        document.getElementById("hiddenRooms").value = document.getElementById("rooms").value;
+        document.getElementById("hiddenQuoteRange").value = rangeText;
+    }
+
+    document.querySelectorAll("input, select").forEach(el => {
+        el.addEventListener("input", recalc);
+    });
+
+    recalc();
+
+    // Formspree success handling
+    const form = document.getElementById("quoteForm");
+    form.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const response = await fetch(e.target.action, {
+            method: "POST",
+            body: new FormData(e.target),
+            headers: { Accept: "application/json" }
+        });
+        if (response.ok) {
+            document.getElementById("successMessage").style.display = "block";
+            form.reset();
+        }
+    });
+</script>
+
+</body>
+</html>
