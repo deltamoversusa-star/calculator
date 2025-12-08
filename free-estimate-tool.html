@@ -15,13 +15,13 @@ body {
     justify-content: center;
 }
 
-/* Wrapper to keep dots + card together */
+/* Wrapper */
 #wizard-wrapper {
     width: 100%;
     max-width: 480px;
 }
 
-/* Step Dots (large bold) */
+/* Step dots */
 .step-dots {
     text-align: center;
     font-size: 28px;
@@ -44,8 +44,6 @@ body {
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     display: none;
 }
-
-/* Active card visible */
 .card.active {
     display: block;
 }
@@ -57,7 +55,6 @@ body {
 .card.slide-from-left {
     animation: slideFromLeft 0.3s ease;
 }
-
 @keyframes slideFromRight {
     from { opacity: 0; transform: translateX(40px); }
     to   { opacity: 1; transform: translateX(0); }
@@ -67,7 +64,7 @@ body {
     to   { opacity: 1; transform: translateX(0); }
 }
 
-/* Labels & Inputs */
+/* Inputs */
 label {
     font-weight: bold;
     color: #1e293b;
@@ -85,7 +82,7 @@ input, select, textarea {
 textarea { height: 80px; }
 
 /* Buttons */
-.next-btn, .back-btn, .submit-btn {
+.next-btn, .back-btn, .submit-btn, .reveal-btn {
     width: 100%;
     padding: 14px;
     border: none;
@@ -95,18 +92,16 @@ textarea { height: 80px; }
     cursor: pointer;
     margin-top: 20px;
 }
-.next-btn {
+.next-btn, .reveal-btn {
     background: #2563eb;
     color: white;
 }
-.next-btn:hover { background: #1e40af; }
-
+.next-btn:hover, .reveal-btn:hover { background: #1e40af; }
 .back-btn {
     background: #e2e8f0;
     color: #1e293b;
 }
 .back-btn:hover { background: #cbd5e1; }
-
 .submit-btn {
     background: #16a34a;
     color: white;
@@ -129,11 +124,24 @@ textarea { height: 80px; }
     font-weight: bold;
     font-size: 16px;
 }
+
+/* Hide estimate block until user clicks */
+#estimate-results.hidden {
+    filter: blur(4px);
+    pointer-events: none;
+    user-select: none;
+    opacity: 0.4;
+}
+#estimate-mask-text {
+    text-align: center;
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 8px;
+}
 </style>
 </head>
 
 <body>
-
 <div id="wizard-wrapper">
 
     <!-- STEP DOTS -->
@@ -144,8 +152,27 @@ textarea { height: 80px; }
         <span id="dot4">●</span>
     </div>
 
-    <!-- STEP 1 — MOVE DETAILS -->
+    <!-- STEP 1: CONTACT INFO (GATED) -->
     <div class="card active" id="step1">
+        <h2>Contact Details</h2>
+
+        <label>Your Name *</label>
+        <input id="contactName" type="text" placeholder="John Doe" />
+
+        <label>Phone Number *</label>
+        <input id="contactPhone" type="tel" placeholder="(555) 555-5555" />
+
+        <label>Email Address *</label>
+        <input id="contactEmail" type="email" placeholder="you@example.com" />
+
+        <label>Preferred Move Date</label>
+        <input id="contactMoveDate" type="date" />
+
+        <button class="next-btn" type="button" onclick="nextStep()">Next →</button>
+    </div>
+
+    <!-- STEP 2: MOVE DETAILS -->
+    <div class="card" id="step2">
         <h2>Move Details</h2>
 
         <label>Bedrooms / Rooms</label>
@@ -169,11 +196,12 @@ textarea { height: 80px; }
             <option>Yes</option>
         </select>
 
+        <button class="back-btn" type="button" onclick="prevStep()">← Back</button>
         <button class="next-btn" type="button" onclick="nextStep()">Next →</button>
     </div>
 
-    <!-- STEP 2 — LOCATIONS -->
-    <div class="card" id="step2">
+    <!-- STEP 3: LOCATIONS -->
+    <div class="card" id="step3">
         <h2>Move Locations</h2>
 
         <label>From ZIP Code</label>
@@ -195,48 +223,46 @@ textarea { height: 80px; }
         <button class="next-btn" type="button" onclick="nextStep()">Next →</button>
     </div>
 
-    <!-- STEP 3 — ESTIMATE -->
-    <div class="card" id="step3">
+    <!-- STEP 4: ESTIMATE + SUBMIT -->
+    <div class="card" id="step4">
         <h2>Your Estimate</h2>
 
-        <div class="result-line"><strong>Subtotal Labor:</strong> $<span id="subtotalLabor">0</span></div>
-        <div class="result-line"><strong>Fuel Cost:</strong> $<span id="fuelCost">0</span></div>
-        <div class="result-line"><strong>Total Before Tax:</strong> $<span id="totalCost">0</span></div>
+        <!-- Reveal button -->
+        <button id="revealBtn" class="reveal-btn" type="button" onclick="revealEstimate()">
+            Show My Estimate
+        </button>
+        <div id="estimate-mask-text">
+            (We’ll show your personalized estimate here.)
+        </div>
 
-        <h3>Estimate Range</h3>
-        <div class="result-line">Low End: $<span id="lowEnd">0</span></div>
-        <div class="result-line">High End: $<span id="highEnd">0</span></div>
-        <div class="result-line"><strong>Final Range:</strong> <span id="quoteRange"></span></div>
+        <!-- Results block (initially blurred/locked) -->
+        <div id="estimate-results" class="hidden">
+            <div class="result-line"><strong>Subtotal Labor:</strong> $<span id="subtotalLabor">0</span></div>
+            <div class="result-line"><strong>Fuel Cost:</strong> $<span id="fuelCost">0</span></div>
+            <div class="result-line"><strong>Total Before Tax:</strong> $<span id="totalCost">0</span></div>
 
-        <button class="back-btn" type="button" onclick="prevStep()">← Back</button>
-        <button class="next-btn" type="button" onclick="nextStep()">Next →</button>
-    </div>
+            <h3>Estimate Range</h3>
+            <div class="result-line">Low End: $<span id="lowEnd">0</span></div>
+            <div class="result-line">High End: $<span id="highEnd">0</span></div>
+            <div class="result-line"><strong>Final Range:</strong> <span id="quoteRange"></span></div>
+        </div>
 
-    <!-- STEP 4 — SUBMIT -->
-    <div class="card" id="step4">
-        <h2>Request Your Quote</h2>
+        <h3>Finalize Your Request</h3>
 
         <form id="quoteForm" action="https://formspree.io/f/mzznaayj" method="POST">
-            <label>Your Name</label>
-            <input name="name" required>
+            <!-- Hidden fields filled from steps 1–3 -->
+            <input type="hidden" name="name" id="formName">
+            <input type="hidden" name="phone" id="formPhone">
+            <input type="hidden" name="email" id="formEmail">
+            <input type="hidden" name="moveDate" id="formMoveDate">
 
-            <label>Phone Number</label>
-            <input name="phone" required>
-
-            <label>Email Address</label>
-            <input name="email" type="email" required>
-
-            <label>Move Date</label>
-            <input name="moveDate" type="date" required>
-
-            <label>Additional Notes</label>
-            <textarea name="notes"></textarea>
-
-            <!-- Hidden fields -->
             <input type="hidden" name="fromZip" id="hiddenFromZip">
             <input type="hidden" name="toZip" id="hiddenToZip">
             <input type="hidden" name="rooms" id="hiddenRooms">
             <input type="hidden" name="quoteRange" id="hiddenQuoteRange">
+
+            <label>Additional Notes</label>
+            <textarea name="notes" placeholder="Tell us anything important about your move..."></textarea>
 
             <button class="submit-btn" type="submit">Submit Request</button>
         </form>
@@ -262,13 +288,10 @@ function updateDots() {
 function showStep(step, direction) {
     currentStep = step;
     updateDots();
-
-    // Hide all cards
     for (let i = 1; i <= 4; i++) {
         const card = document.getElementById("step" + i);
         card.classList.remove("active", "slide-from-right", "slide-from-left");
     }
-
     const newCard = document.getElementById("step" + step);
     newCard.classList.add("active");
     if (direction === "forward") {
@@ -278,7 +301,36 @@ function showStep(step, direction) {
     }
 }
 
+/* Validate Step 1 before moving on */
+function validateContactStep() {
+    const name = contactNameInput.value.trim();
+    const phone = contactPhoneInput.value.trim();
+    const email = contactEmailInput.value.trim();
+
+    if (!name) {
+        alert("Please enter your name to continue.");
+        return false;
+    }
+    if (!phone) {
+        alert("Please enter your phone number to continue.");
+        return false;
+    }
+    if (!email) {
+        alert("Please enter your email address to continue.");
+        return false;
+    }
+    if (!contactEmailInput.checkValidity()) {
+        alert("Please enter a valid email address.");
+        return false;
+    }
+    return true;
+}
+
 function nextStep() {
+    // Gate: require contact info first
+    if (currentStep === 1 && !validateContactStep()) {
+        return;
+    }
     recalc();
     if (currentStep < 4) {
         showStep(currentStep + 1, "forward");
@@ -290,6 +342,19 @@ function prevStep() {
     }
 }
 
+/* Reveal estimate on step 4 */
+function revealEstimate() {
+    recalc();
+    const block = document.getElementById("estimate-results");
+    const btn = document.getElementById("revealBtn");
+    const txt = document.getElementById("estimate-mask-text");
+
+    block.classList.remove("hidden");
+    btn.disabled = true;
+    btn.innerText = "Estimate Shown";
+    txt.style.display = "none";
+}
+
 /* --- CALCULATION LOGIC --- */
 const RATE_LOCAL_2MEN = 130;
 const RATE_PACKING = 49;
@@ -297,6 +362,12 @@ const RATE_FUEL_UNDER35 = 130;
 const RATE_FUEL_OVER35 = 150;
 const FUEL_MIN_HOURS = 2;
 const PIANO_FEE = 150;
+
+/* Element references */
+const contactNameInput = document.getElementById("contactName");
+const contactPhoneInput = document.getElementById("contactPhone");
+const contactEmailInput = document.getElementById("contactEmail");
+const contactMoveDateInput = document.getElementById("contactMoveDate");
 
 const roomsInput = document.getElementById("rooms");
 const laborHoursInput = document.getElementById("laborHours");
@@ -315,12 +386,28 @@ const lowEnd = document.getElementById("lowEnd");
 const highEnd = document.getElementById("highEnd");
 const quoteRangeSpan = document.getElementById("quoteRange");
 
+/* Hidden form fields */
+const formNameInput = document.getElementById("formName");
+const formPhoneInput = document.getElementById("formPhone");
+const formEmailInput = document.getElementById("formEmail");
+const formMoveDateInput = document.getElementById("formMoveDate");
+
 const hiddenFromZip = document.getElementById("hiddenFromZip");
 const hiddenToZip = document.getElementById("hiddenToZip");
 const hiddenRooms = document.getElementById("hiddenRooms");
 const hiddenQuoteRange = document.getElementById("hiddenQuoteRange");
 
+/* Sync contact info into hidden form fields */
+function syncContactToForm() {
+    formNameInput.value = contactNameInput.value;
+    formPhoneInput.value = contactPhoneInput.value;
+    formEmailInput.value = contactEmailInput.value;
+    formMoveDateInput.value = contactMoveDateInput.value;
+}
+
 function recalc() {
+    syncContactToForm();
+
     let movers = parseFloat(moversInput.value) || 0;
     let laborHours = parseFloat(laborHoursInput.value) || 0;
     let packingHours = parseFloat(packingHoursInput.value) || 0;
@@ -359,6 +446,7 @@ function recalc() {
     hiddenQuoteRange.value = range;
 }
 
+/* Recalc when any input changes */
 document.querySelectorAll("input, select")
     .forEach(el => el.addEventListener("input", recalc));
 
@@ -368,6 +456,7 @@ recalc();
 document.getElementById("quoteForm")
     .addEventListener("submit", async function (e) {
         e.preventDefault();
+        syncContactToForm();
         const response = await fetch(e.target.action, {
             method: "POST",
             body: new FormData(e.target),
@@ -382,3 +471,4 @@ document.getElementById("quoteForm")
 
 </body>
 </html>
+
