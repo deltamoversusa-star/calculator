@@ -303,6 +303,10 @@ function validateContactStep() {
     const phone = contactPhoneInput.value.trim();
     const email = contactEmailInput.value.trim();
 
+    // Reset outlines
+    contactEmailInput.style.borderColor = "#cbd5e1";
+
+    // Basic checks
     if (!name) {
         alert("Please enter your name to continue.");
         return false;
@@ -315,12 +319,19 @@ function validateContactStep() {
         alert("Please enter your email address to continue.");
         return false;
     }
-    if (!contactEmailInput.checkValidity()) {
-        alert("Please enter a valid email address.");
+
+    // Strong email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,6}$/;
+
+    if (!emailRegex.test(email)) {
+        alert("Please enter a valid email address (example: name@gmail.com).");
+        contactEmailInput.style.borderColor = "red";
         return false;
     }
+
     return true;
 }
+
 
 function nextStep() {
     // Gate: require contact info first
@@ -462,3 +473,4 @@ document.getElementById("quoteForm")
 
 </body>
 </html>
+
