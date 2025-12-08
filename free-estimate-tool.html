@@ -82,7 +82,7 @@ input, select, textarea {
 textarea { height: 80px; }
 
 /* Buttons */
-.next-btn, .back-btn, .submit-btn, .reveal-btn {
+.next-btn, .back-btn, .submit-btn {
     width: 100%;
     padding: 14px;
     border: none;
@@ -92,11 +92,11 @@ textarea { height: 80px; }
     cursor: pointer;
     margin-top: 20px;
 }
-.next-btn, .reveal-btn {
+.next-btn {
     background: #2563eb;
     color: white;
 }
-.next-btn:hover, .reveal-btn:hover { background: #1e40af; }
+.next-btn:hover { background: #1e40af; }
 .back-btn {
     background: #e2e8f0;
     color: #1e293b;
@@ -125,7 +125,7 @@ textarea { height: 80px; }
     font-size: 16px;
 }
 
-/* Hide estimate block until user clicks */
+/* Hide estimate block until after submit */
 #estimate-results.hidden {
     filter: blur(4px);
     pointer-events: none;
@@ -227,12 +227,8 @@ textarea { height: 80px; }
     <div class="card" id="step4">
         <h2>Your Estimate</h2>
 
-        <!-- Reveal button -->
-        <button id="revealBtn" class="reveal-btn" type="button" onclick="revealEstimate()">
-            Show My Estimate
-        </button>
         <div id="estimate-mask-text">
-            (We’ll show your personalized estimate here.)
+            Submit your request below to reveal your personalized estimate.
         </div>
 
         <!-- Results block (initially blurred/locked) -->
@@ -264,11 +260,11 @@ textarea { height: 80px; }
             <label>Additional Notes</label>
             <textarea name="notes" placeholder="Tell us anything important about your move..."></textarea>
 
-            <button class="submit-btn" type="submit">Submit Request</button>
+            <button class="submit-btn" type="submit">Submit Request & Show Estimate</button>
         </form>
 
         <div class="success-message" id="successMessage">
-            Thank you! Your request was sent. We will contact you shortly.
+            Thank you! Your request was sent. Your estimate is now shown above and a copy will be emailed to you.
         </div>
 
         <button class="back-btn" type="button" onclick="prevStep()">← Back</button>
@@ -340,19 +336,6 @@ function prevStep() {
     if (currentStep > 1) {
         showStep(currentStep - 1, "back");
     }
-}
-
-/* Reveal estimate on step 4 */
-function revealEstimate() {
-    recalc();
-    const block = document.getElementById("estimate-results");
-    const btn = document.getElementById("revealBtn");
-    const txt = document.getElementById("estimate-mask-text");
-
-    block.classList.remove("hidden");
-    btn.disabled = true;
-    btn.innerText = "Estimate Shown";
-    txt.style.display = "none";
 }
 
 /* --- CALCULATION LOGIC --- */
@@ -452,23 +435,30 @@ document.querySelectorAll("input, select")
 
 recalc();
 
-/* Form submission */
+/* Form submission: submit first, THEN show estimate */
 document.getElementById("quoteForm")
     .addEventListener("submit", async function (e) {
         e.preventDefault();
         syncContactToForm();
+        recalc();
+
         const response = await fetch(e.target.action, {
             method: "POST",
             body: new FormData(e.target),
             headers: { Accept: "application/json" }
         });
+
         if (response.ok) {
+            // Show success + reveal estimate
             document.getElementById("successMessage").style.display = "block";
+            document.getElementById("estimate-results").classList.remove("hidden");
+            document.getElementById("estimate-mask-text").style.display = "none";
             e.target.reset();
+        } else {
+            alert("There was a problem sending your request. Please try again.");
         }
     });
 </script>
 
 </body>
 </html>
-
