@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Free Moving Estimate Tool</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f7fb;
+    margin: 0;
+    padding: 25px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Wrapper */
+#wizard-wrapper {
+    width: 100%;
+    max-width: 480px;
+}
+
+/* Step dots */
+.step-dots {
+    text-align: center;
+    font-size: 28px;
+    letter-spacing: 14px;
+    margin-bottom: 15px;
+}
+.step-dots span {
+    color: #d0d0d0;
+}
+.step-dots .active {
+    color: #2563eb;
+}
+
+/* Cards */
+.card {
+    width: 100%;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    display: none;
+}
+.card.active {
+    display: block;
+}
+
+/* Slide animations */
+.card.slide-from-right {
+    animation: slideFromRight 0.3s ease;
+}
+.card.slide-from-left {
+    animation: slideFromLeft 0.3s ease;
+}
+@keyframes slideFromRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideFromLeft {
+    from { opacity: 0; transform: translateX(-40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Inputs */
+label {
+    font-weight: bold;
+    color: #1e293b;
+    margin-top: 15px;
+    display: block;
+}
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 16px;
+}
+textarea { height: 80px; }
+
+/* Buttons */
+.next-btn, .back-btn, .submit-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+}
+.next-btn {
+    background: #2563eb;
+    color: white;
+}
+.next-btn:hover { background: #1e40af; }
+.back-btn {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+.back-btn:hover { background: #cbd5e1; }
+.submit-btn {
+    background: #16a34a;
+    color: white;
+}
+.submit-btn:hover { background: #15803d; }
+
+.result-line {
+    margin: 8px 0;
+    font-size: 17px;
+}
+
+/* Final estimate highlight */
+#quoteRange {
+    font-size: 26px;
+    font-weight: 900;
+    color: #16a34a;
+}
+
+/* Success */
+.success-message {
+    display: none;
+    margin-top: 20px;
+    padding: 15px;
+    background: #d1fae5;
+    border-left: 6px solid #10b981;
+    border-radius: 8px;
+    color: #065f46;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* Mask before submit */
+#estimate-results.hidden {
+    filter: blur(4px);
+    pointer-events: none;
+    user-select: none;
+    opacity: 0.4;
+}
+#estimate-mask-text {
+    text-align: center;
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 8px;
+}
+
+/* Phone CTA Button */
+.call-cta-btn {
+    background:#2563eb;
+    color:white;
+    font-size:18px;
+    padding:14px;
+    border-radius:10px;
+    text-align:center;
+    display:block;
+    margin-top:18px;
+    font-weight:bold;
+    text-decoration:none;
+}
+
+/* Gray background for auto-filled city fields */
+.readonly-field {
+    background:#f3f4f6;
+}
+</style>
+</head>
+
+<body>
+
+<!-- BRAND HEADER -->
+<div style="text-align:center; margin-bottom:15px;">
+    <img src="YOUR-LOGO.png" alt="Delta Movers Logo" style="max-width:160px; margin-bottom:10px;">
+    <div>
+        <a href="https://DeltaMoversUSA.com" style="text-decoration:none; color:#2563eb; font-weight:bold;">
+            ← Return to DeltaMoversUSA.com
+        </a>
+    </div>
+</div>
+
+<div id="wizard-wrapper">
+
+    <!-- STEP DOTS -->
+    <div class="step-dots">
+        <span id="dot1" class="active">●</span>
+        <span id="dot2">●</span>
+        <span id="dot3">●</span>
+        <span id="dot4">●</span>
+    </div>
+
+    <!-- STEP 1: CONTACT -->
+    <div class="card active" id="step1">
+        <h2>Contact Details</h2>
+
+        <label>Your Name *</label>
+        <input id="contactName" type="text" placeholder="John Doe" />
+
+        <label>Phone Number *</label>
+        <input id="contactPhone" type="tel" placeholder="(555) 555-5555" />
+
+        <label>Email Address *</label>
+        <input id="contactEmail" type="email" placeholder="you@example.com" />
+
+        <label>Preferred Move Date</label>
+        <input id="contactMoveDate" type="date" />
+
+        <button class="next-btn" type="button" onclick="nextStep()">Next →</button>
+    </div>
+
+    <!-- STEP 2: MOVE DETAILS -->
+    <div class="card" id="step2">
+        <h2>Move Details</h2>
+
+        <label>Bedrooms / Rooms</label>
+        <input id="rooms" type="number" value="4">
+
+        <label>Estimated Labor Hours</label>
+        <input id="laborHours" type="number" value="10">
+
+        <label>Extra Movers Needed</label>
+        <input id="extraMovers" type="number" value="0">
+
+        <label>Total Movers</label>
+        <input id="movers" type="number" value="2">
+
+        <label>Packing Hours Needed?</label>
+        <input id="packingHours" type="number" value="3">
+
+        <label>Piano or Gun Safe?</label>
+        <select id="piano">
+            <option>No</option>
+            <option>Yes</option>
+        </select>
+
+        <button class="back-btn" type="button" onclick="prevStep()">← Back</button>
+        <button class="next-btn" type="button" onclick="nextStep()">Next →</button>
+    </div>
+
+    <!-- STEP 3: LOCATIONS -->
+    <div class="card" id="step3">
+        <h2>Move Locations</h2>
+
+        <label>From ZIP Code</label>
+        <input id="fromZip">
+
+        <label>From City</label>
+        <input id="fromCity" class="readonly-field" readonly>
+
+        <label>To ZIP Code</label>
+        <input id="toZip">
+
+        <label>To City</label>
+        <input id="toCity" class="readonly-field" readonly>
+
+        <label>Estimated One-Way Miles</label>
+        <input id="miles" type="number" value="27">
+
+        <label>One-Way Drive Hours</label>
+        <input id="driveHours" type="number" value="0.08">
+
+        <label>Round-Trip Drive Hours</label>
+        <input id="roundTrip" type="number" value="0.16">
+
+        <button class="back-btn" type="button" onclick="prevStep()">← Back</button>
+        <button class="next-btn" type="button" onclick="nextStep()">Next →</button>
+    </div>
+
+    <!-- STEP 4: ESTIMATE -->
+    <div class="card" id="step4">
+        <h2 style="margin-bottom:5px;">Your Personalized Estimate</h2>
+        <p style="color:#6b7280; margin-top:-10px; margin-bottom:15px;">
+            Transparent pricing — no hidden fees.
+        </p>
+
+        <!-- PHONE CTA -->
+        <a href="tel:4076031833"
+           style="display:block; background:#2563eb; color:white; 
+                padding:14px; border-radius:10px; text-align:center; 
+                font-size:18px; font-weight:bold; margin-bottom:15px;">
+            📞 Call Delta Movers Now – Get $50 Off: (407) 603-1833
+        </a>
+
+        <div id="estimate-mask-text">
+            Submit your request below to reveal your personalized estimate.
+        </div>
+
+        <!-- Results block (locked until submit) -->
+        <div id="estimate-results" class="hidden">
+            <div class="result-line"><strong>Subtotal Labor:</strong> $<span id="subtotalLabor">0</span></div>
+            <div class="result-line"><strong>Fuel Cost:</strong> $<span id="fuelCost">0</span></div>
+            <div class="result-line"><strong>Total Before Tax:</strong> $<span id="totalCost">0</span></div>
+
+            <h3>Estimate Range</h3>
+            <div class="result-line">Low End: $<span id="lowEnd">0</span></div>
+            <div class="result-line">High End: $<span id="highEnd">0</span></div>
+
+            <div class="result-line">
+                <strong>Final Range:</strong> 
+                <span id="quoteRange"></span>
+            </div>
+
+            <!-- Extra CTA -->
+            <a href="tel:4076031833" class="call-cta-btn">
+                Call Now to Book & Save $50 Today — (407) 603-1833
+            </a>
+        </div>
+
+        <h3>Finalize Your Request</h3>
+
+        <form id="quoteForm" action="https://formspree.io/f/mzznaayj" method="POST">
+
+            <!-- Hidden fields -->
+            <input type="hidden" name="name" id="formName">
+            <input type="hidden" name="phone" id="formPhone">
+            <input type="hidden" name="email" id="formEmail">
+            <input type="hidden" name="moveDate" id="formMoveDate">
+            <input type="hidden" name="fromZip" id="hiddenFromZip">
+            <input type="hidden" name="toZip" id="hiddenToZip">
+            <input type="hidden" name="fromCity" id="hiddenFromCity">
+            <input type="hidden" name="toCity" id="hiddenToCity">
+            <input type="hidden" name="rooms" id="hiddenRooms">
+            <input type="hidden" name="quoteRange" id="hiddenQuoteRange">
+
+            <label>Additional Notes</label>
+            <textarea name="notes" placeholder="Tell us anything important about your move..."></textarea>
+
+            <button class="submit-btn" type="submit" style="font-size:18px;">
+                Submit & Unlock Your Full Estimate + $50 Off
+            </button>
+
+            <p style="text-align:center; color:#15803d; font-size:15px; margin-top:6px;">
+                🎁 Free Packing Kit if You Book This Week
+            </p>
+        </form>
+
+        <div class="success-message" id="successMessage">
+            Thank you! Your request was sent. Your estimate is now shown above and a copy will be emailed to you.
+        </div>
+
+        <!-- SMS CONFIRMATION BLOCK -->
+        <div id="smsConfirm" 
+             style="display:none; margin-top:15px; padding:15px; background:#e0f2fe; border-left:6px solid #0284c7; border-radius:8px;">
+            Want to confirm by text?
+            <br><br>
+            <a id="smsLink" href="#" 
+               style="background:#0284c7; color:white; padding:10px 14px; border-radius:8px; font-weight:bold; text-decoration:none; display:inline-block;">
+                📩 Send SMS Confirmation
+            </a>
+        </div>
+
+        <button class="back-btn" type="button" onclick="prevStep()">← Back</button>
+    </div>
+</div>
+
+<script>
+let currentStep = 1;
+
+function updateDots() {
+    for (let i = 1; i <= 4; i++) {
+        document.getElementById("dot" + i).classList.remove("active");
+    }
+    document.getElementById("dot" + currentStep).classList.add("active");
+}
+
+function showStep(step, direction) {
+    currentStep = step;
+    updateDots();
+    for (let i = 1; i <= 4; i++) {
+        const card = document.getElementById("step" + i);
+        card.classList.remove("active", "slide-from-right", "slide-from-left");
+    }
+    const newCard = document.getElementById("step" + step);
+    newCard.classList.add("active");
+    if (direction === "forward") {
+        newCard.classList.add("slide-from-right");
+    } else if (direction === "back") {
+        newCard.classList.add("slide-from-left");
+    }
+}
+
+/* Validate Step 1 */
+function validateContactStep() {
+    const name = contactNameInput.value.trim();
+    const phone = contactPhoneInput.value.trim();
+    const email = contactEmailInput.value.trim();
+
+    contactEmailInput.style.borderColor = "#cbd5e1";
+
+    if (!name) { alert("Please enter your name."); return false; }
+    if (!phone) { alert("Please enter your phone number."); return false; }
+    if (!email) { alert("Please enter your email."); return false; }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,6}$/;
+    if (!emailRegex.test(email)) {
+        alert("Please enter a valid email address.");
+        contactEmailInput.style.borderColor = "red";
+        return false;
+    }
+    return true;
+}
+
+function nextStep() {
+    if (currentStep === 1 && !validateContactStep()) return;
+
+    recalc();
+    if (currentStep < 4) showStep(currentStep + 1, "forward");
+}
+
+function prevStep() {
+    if (currentStep > 1) showStep(currentStep - 1, "back");
+}
+
+/* --- GEO LOOKUP FUNCTION (ZIP → City, ST) --- */
+async function lookupZip(zip, targetInput) {
+    if (!zip || zip.length < 5) {
+        targetInput.value = "";
+        return;
+    }
+
+    try {
+        const response = await fetch(`https://api.zippopotam.us/us/${zip}`);
+
+        if (!response.ok) {
+            targetInput.value = "Invalid ZIP";
+            targetInput.style.color = "red";
+            return;
+        }
+
+        const data = await response.json();
+        const place = data.places[0];
+
+        targetInput.value = `${place["place name"]}, ${place["state abbreviation"]}`;
+        targetInput.style.color = "#000";
+    } catch (e) {
+        targetInput.value = "Lookup error";
+        targetInput.style.color = "red";
+    }
+}
+
+/* ELEMENT REFERENCES */
+const contactNameInput = document.getElementById("contactName");
+const contactPhoneInput = document.getElementById("contactPhone");
+const contactEmailInput = document.getElementById("contactEmail");
+const contactMoveDateInput = document.getElementById("contactMoveDate");
+
+const roomsInput = document.getElementById("rooms");
+const laborHoursInput = document.getElementById("laborHours");
+const packingHoursInput = document.getElementById("packingHours");
+const pianoInput = document.getElementById("piano");
+const milesInput = document.getElementById("miles");
+const roundTripInput = document.getElementById("roundTrip");
+const fromZipInput = document.getElementById("fromZip");
+const toZipInput = document.getElementById("toZip");
+const fromCityInput = document.getElementById("fromCity");
+const toCityInput = document.getElementById("toCity");
+const moversInput = document.getElementById("movers");
+
+const subtotalLabor = document.getElementById("subtotalLabor");
+const fuelCostSpan = document.getElementById("fuelCost");
+const totalCost = document.getElementById("totalCost");
+const lowEnd = document.getElementById("lowEnd");
+const highEnd = document.getElementById("highEnd");
+const quoteRangeSpan = document.getElementById("quoteRange");
+
+const formNameInput = document.getElementById("formName");
+const formPhoneInput = document.getElementById("formPhone");
+const formEmailInput = document.getElementById("formEmail");
+const formMoveDateInput = document.getElementById("formMoveDate");
+const hiddenFromZip = document.getElementById("hiddenFromZip");
+const hiddenToZip = document.getElementById("hiddenToZip");
+const hiddenFromCity = document.getElementById("hiddenFromCity");
+const hiddenToCity = document.getElementById("hiddenToCity");
+const hiddenRooms = document.getElementById("hiddenRooms");
+const hiddenQuoteRange = document.getElementById("hiddenQuoteRange");
+
+/* Auto-fill city from ZIP */
+fromZipInput.addEventListener("input", () => {
+    lookupZip(fromZipInput.value, fromCityInput);
+});
+toZipInput.addEventListener("input", () => {
+    lookupZip(toZipInput.value, toCityInput);
+});
+
+/* Sync contact info into hidden form fields */
+function syncContactToForm() {
+    formNameInput.value = contactNameInput.value;
+    formPhoneInput.value = contactPhoneInput.value;
+    formEmailInput.value = contactEmailInput.value;
+    formMoveDateInput.value = contactMoveDateInput.value;
+    hiddenFromZip.value = fromZipInput.value;
+    hiddenToZip.value = toZipInput.value;
+    hiddenFromCity.value = fromCityInput.value;
+    hiddenToCity.value = toCityInput.value;
+}
+
+function recalc() {
+    syncContactToForm();
+
+    let movers = parseFloat(moversInput.value) || 0;
+    let laborHours = parseFloat(laborHoursInput.value) || 0;
+    let packingHours = parseFloat(packingHoursInput.value) || 0;
+    let piano = pianoInput.value;
+    let miles = parseFloat(milesInput.value) || 0;
+    let roundTrip = parseFloat(roundTripInput.value) || 0;
+
+    let laborCost = laborHours * movers * 130;
+    let packingCost = packingHours * 49;
+    let pianoCost = piano === "Yes" ? 150 : 0;
+    let subtotal = laborCost + packingCost + pianoCost;
+
+    let fuelCost = 0;
+    if (miles < 35) {
+        let billableHours = Math.max(roundTrip, 2);
+        fuelCost = billableHours * 130;
+    } else {
+        fuelCost = roundTrip * 150;
+    }
+
+    let total = subtotal + fuelCost;
+    let low = Math.round(total * 0.95);
+    let high = Math.round(total * 1.25);
+    let range = `$${low} – $${high}`;
+
+    subtotalLabor.innerText = subtotal.toFixed(0);
+    fuelCostSpan.innerText = fuelCost.toFixed(0);
+    totalCost.innerText = total.toFixed(0);
+    lowEnd.innerText = low;
+    highEnd.innerText = high;
+    quoteRangeSpan.innerText = range;
+    hiddenRooms.value = roomsInput.value;
+    hiddenQuoteRange.value = range;
+}
+
+/* Recalc on any change */
+document.querySelectorAll("input, select")
+.forEach(el => el.addEventListener("input", recalc));
+
+recalc();
+
+/* --- SMS AUTO-FILL LOGIC --- */
+function showSMSBlock() {
+    const smsBlock = document.getElementById("smsConfirm");
+    const smsLink = document.getElementById("smsLink");
+
+    const userName = contactNameInput.value || "My Move";
+    const estimate = hiddenQuoteRange.value || "";
+
+    const smsMessage = encodeURIComponent(
+        `Hi, this is ${userName}. I'm confirming my moving request. My estimate was ${estimate}.`
+    );
+
+    smsLink.href = `sms:4076031833?&body=${smsMessage}`;
+    smsBlock.style.display = "block";
+}
+
+/* Form submission */
+document.getElementById("quoteForm")
+.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    syncContactToForm();
+    recalc();
+
+    const response = await fetch(e.target.action, {
+        method: "POST",
+        body: new FormData(e.target),
+        headers: { Accept: "application/json" }
+    });
+
+    if (response.ok) {
+        document.getElementById("successMessage").style.display = "block";
+        document.getElementById("estimate-results").classList.remove("hidden");
+        document.getElementById("estimate-mask-text").style.display = "none";
+
+        /* Show SMS auto-fill */
+        showSMSBlock();
+
+        e.target.reset();
+    } else {
+        alert("There was a problem sending your request. Please try again.");
+    }
+});
+</script>
+
+</body>
+</html>
