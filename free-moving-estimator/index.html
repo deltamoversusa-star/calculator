@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Free Moving Estimate Tool</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f7fb;
+    margin: 0;
+    padding: 25px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Wrapper */
+#wizard-wrapper {
+    width: 100%;
+    max-width: 480px;
+}
+
+/* Step dots */
+.step-dots {
+    text-align: center;
+    font-size: 28px;
+    letter-spacing: 14px;
+    margin-bottom: 15px;
+}
+.step-dots span { color: #d0d0d0; }
+.step-dots .active { color: #2563eb; }
+
+/* Cards */
+.card {
+    width: 100%;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    display: none;
+}
+.card.active { display: block; }
+
+/* Slide animations */
+.card.slide-from-right { animation: slideFromRight 0.3s ease; }
+.card.slide-from-left { animation: slideFromLeft 0.3s ease; }
+
+@keyframes slideFromRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideFromLeft {
+    from { opacity: 0; transform: translateX(-40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Inputs */
+label {
+    font-weight: bold;
+    color: #1e293b;
+    margin-top: 15px;
+    display: block;
+}
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 6px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 16px;
+}
+textarea { height: 80px; }
+
+/* Buttons */
+.next-btn, .back-btn, .submit-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+}
+.next-btn { background: #2563eb; color:white; }
+.next-btn:hover { background:#1e40af; }
+
+.back-btn {
+    background:#e2e8f0;
+    color:#1e293b;
+}
+.back-btn:hover { background:#cbd5e1; }
+
+.submit-btn {
+    background:#16a34a;
+    color:white;
+}
+.submit-btn:hover { background:#15803d; }
+
+.result-line {
+    margin: 8px 0;
+    font-size: 17px;
+}
+
+/* Final Estimate Highlight */
+#quoteRange {
+    font-size: 26px;
+    font-weight: 900;
+    color: #16a34a;
+}
+
+/* Success Box */
+.success-message {
+    display:none;
+    margin-top:20px;
+    padding:15px;
+    background:#d1fae5;
+    border-left:6px solid #10b981;
+    border-radius:8px;
+    color:#065f46;
+    font-weight:bold;
+    font-size:16px;
+}
+
+/* Blur Before Submit */
+#estimate-results.hidden {
+    filter:blur(4px);
+    opacity:0.4;
+    pointer-events:none;
+    user-select:none;
+}
+#estimate-mask-text {
+    text-align:center;
+    font-size:14px;
+    color:#6b7280;
+    margin-top:8px;
+}
+
+/* CTA button */
+.call-cta-btn {
+    background:#2563eb;
+    color:white;
+    padding:14px;
+    border-radius:10px;
+    text-align:center;
+    display:block;
+    margin-top:15px;
+    font-size:18px;
+    font-weight:bold;
+    text-decoration:none;
+}
+
+.readonly-field { background:#f0f0f0; }
+</style>
+</head>
+
+<body>
+
+<!-- BRAND HEADER -->
+<div style="text-align:center; margin-bottom:15px;">
+    <!-- ✅ Clickable logo + ✅ correct GitHub Pages path -->
+    <a href="https://www.deltamoversusa.com/book-online" style="display:inline-block;">
+        <img src="/calculator/logofinal.png"
+             alt="Delta Movers Logo"
+             style="max-width:160px; margin-bottom:10px; cursor:pointer;">
+    </a>
+
+    <div>
+        <a href="https://www.deltamoversusa.com/book-online"
+           style="text-decoration:none; color:#2563eb; font-weight:bold;">
+            Book Online
+        </a>
+    </div>
+</div>
+
+<div id="wizard-wrapper">
+
+    <!-- STEP DOTS -->
+    <div class="step-dots">
+        <span id="dot1" class="active">●</span>
+        <span id="dot2">●</span>
+        <span id="dot3">●</span>
+        <span id="dot4">●</span>
+    </div>
+
+    <!-- STEP 1: CONTACT -->
+    <div class="card active" id="step1">
+        <h2>Contact Details</h2>
+
+        <label>Your Name *</label>
+        <input id="contactName" type="text" placeholder="John Doe" />
+
+        <label>Phone Number *</label>
+        <input id="contactPhone" type="tel" placeholder="(555) 555-5555" />
+
+        <label>Email Address *</label>
+        <input id="contactEmail" type="email" placeholder="you@example.com" />
+
+        <label>Preferred Move Date</label>
+        <input id="contactMoveDate" type="date" />
+
+        <button class="next-btn" type="button" onclick="nextStep()">Next →</button>
+    </div>
+
+    <!-- STEP 2: MOVE DETAILS -->
+    <div class="card" id="step2">
+        <h2>Move Details</h2>
+
+        <label>Bedrooms / Rooms</label>
+        <input id="rooms" type="number" value="4">
+
+        <label>Estimated Labor Hours</label>
+        <input id="laborHours" type="number" value="10">
+
+        <label>Extra Movers Needed</label>
+        <input id="extraMovers" type="number" value="0">
+
+        <label>Total Movers</label>
+        <input id="movers" type="number" value="2">
+
+        <label>Packing Hours Needed?</label>
+        <input id="packingHours" type="number" value="3">
+
+        <label>Piano or Gun Safe?</label>
+        <select id="piano">
+            <option>No</option>
+            <option>Yes</option>
+        </select>
+
+        <button class="back-btn" type="button" onclick="prevStep()">← Back</button>
+        <button class="next-btn" type="button" onclick="nextStep()">Next →</button>
+    </div>
+
+    <!-- STEP 3: LOCATIONS -->
+    <div class="card" id="step3">
+        <h2>Move Locations</h2>
+
+        <label>From ZIP Code</label>
+        <input id="fromZip">
+
+        <label>From City</label>
+        <input id="fromCity" class="readonly-field" readonly>
+
+        <label>To ZIP Code</label>
+        <input id="toZip">
+
+        <label>To City</label>
+        <input id="toCity" class="readonly-field" readonly>
+
+        <label>Estimated One-Way Miles</label>
+        <input id="miles" type="number" value="27">
+
+        <label>One-Way Drive Hours</label>
+        <input id="driveHours" type="number" value="0.08">
+
+        <label>Round-Trip Drive Hours</label>
+        <input id="roundTrip" type="number" value="0.16">
+
+        <button class="back-btn" type="button" onclick="prevStep()">← Back</button>
+        <button class="next-btn" type="button" onclick="nextStep()">Next →</button>
+    </div>
+
+    <!-- STEP 4: ESTIMATE -->
+    <div class="card" id="step4">
+        <h2>Your Personalized Estimate</h2>
+
+        <a href="tel:4076031833" class="call-cta-btn">
+            📞 Call Delta Movers — Get $50 Off: (407) 603-1833
+        </a>
+
+        <div id="estimate-mask-text">Submit your request to reveal your personalized estimate.</div>
+
+        <div id="estimate-results" class="hidden">
+            <div class="result-line"><strong>Subtotal Labor:</strong> $<span id="subtotalLabor">0</span></div>
+            <div class="result-line"><strong>Fuel Cost:</strong> $<span id="fuelCost">0</span></div>
+            <div class="result-line"><strong>Total Before Tax:</strong> $<span id="totalCost">0</span></div>
+
+            <h3>Estimate Range</h3>
+            <div>Low End: $<span id="lowEnd">0</span></div>
+            <div>High End: $<span id="highEnd">0</span></div>
+
+            <div class="result-line">
+                <strong>Final Range:</strong>
+                <span id="quoteRange"></span>
+            </div>
+
+            <a href="tel:4076031833" class="call-cta-btn">
+                📞 Call Now to Book & Save $50
+            </a>
+        </div>
+
+        <h3>Finalize Your Request</h3>
+
+        <form id="quoteForm" action="https://formspree.io/f/mzznaayj" method="POST">
+            <input type="hidden" name="name" id="formName">
+            <input type="hidden" name="phone" id="formPhone">
+            <input type="hidden" name="email" id="formEmail">
+            <input type="hidden" name="moveDate" id="formMoveDate">
+
+            <input type="hidden" name="fromZip" id="hiddenFromZip">
+            <input type="hidden" name="toZip" id="hiddenToZip">
+            <input type="hidden" name="fromCity" id="hiddenFromCity">
+            <input type="hidden" name="toCity" id="hiddenToCity">
+            <input type="hidden" name="rooms" id="hiddenRooms">
+            <input type="hidden" name="quoteRange" id="hiddenQuoteRange">
+
+            <label>Additional Notes</label>
+            <textarea name="notes" placeholder="Tell us anything important..."></textarea>
+
+            <button class="submit-btn" type="submit">
+                Submit & Unlock Your Estimate + $50 Off
+            </button>
+        </form>
+
+        <div class="success-message" id="successMessage">
+            Thank you! Your request was sent. Redirecting to booking...
+        </div>
+
+        <button class="back-btn" type="button" onclick="prevStep()">← Back</button>
+    </div>
+</div>
+
+<script>
+"use strict";
+
+let currentStep = 1;
+
+function updateDots(){
+    for(let i=1;i<=4;i++){
+        document.getElementById("dot"+i).classList.remove("active");
+    }
+    document.getElementById("dot"+currentStep).classList.add("active");
+}
+
+function showStep(step,dir){
+    currentStep = step;
+    updateDots();
+    for(let i=1;i<=4;i++){
+        const card = document.getElementById("step"+i);
+        card.classList.remove("active","slide-from-right","slide-from-left");
+    }
+    const newCard = document.getElementById("step"+step);
+    newCard.classList.add("active");
+    if(dir==="forward") newCard.classList.add("slide-from-right");
+    if(dir==="back") newCard.classList.add("slide-from-left");
+}
+
+function validateContactStep(){
+    const contactName = document.getElementById("contactName");
+    const contactPhone = document.getElementById("contactPhone");
+    const contactEmail = document.getElementById("contactEmail");
+
+    if(!contactName.value.trim()){ alert("Enter your name."); return false; }
+    if(!contactPhone.value.trim()){ alert("Enter your phone."); return false; }
+    if(!contactEmail.value.trim()){ alert("Enter your email."); return false; }
+
+    const emailRegex=/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+    if(!emailRegex.test(contactEmail.value)){
+        alert("Enter a valid email."); return false;
+    }
+    return true;
+}
+
+function nextStep(){
+    if(currentStep===1 && !validateContactStep()) return;
+    recalc();
+    if(currentStep<4) showStep(currentStep+1,"forward");
+}
+
+function prevStep(){
+    if(currentStep>1) showStep(currentStep-1,"back");
+}
+
+/* --- ZIP LOOKUP --- */
+async function lookupZip(zip,target){
+    if(!zip || zip.length<5){ target.value=""; return; }
+
+    try{
+        const res = await fetch(`https://api.zippopotam.us/us/${zip}`);
+        if(!res.ok){
+            target.value="Invalid ZIP";
+            target.style.color="red";
+            return;
+        }
+        const data = await res.json();
+        const place = data.places[0];
+        target.value = `${place["place name"]}, ${place["state abbreviation"]}`;
+        target.style.color="black";
+    } catch(e){
+        target.value="Lookup error";
+        target.style.color="red";
+    }
+}
+
+document.getElementById("fromZip").addEventListener("input", (e) =>
+    lookupZip(e.target.value, document.getElementById("fromCity"))
+);
+document.getElementById("toZip").addEventListener("input", (e) =>
+    lookupZip(e.target.value, document.getElementById("toCity"))
+);
+
+/* Sync hidden fields */
+function syncContact(){
+    document.getElementById("formName").value = document.getElementById("contactName").value;
+    document.getElementById("formPhone").value = document.getElementById("contactPhone").value;
+    document.getElementById("formEmail").value = document.getElementById("contactEmail").value;
+    document.getElementById("formMoveDate").value = document.getElementById("contactMoveDate").value;
+
+    document.getElementById("hiddenFromZip").value = document.getElementById("fromZip").value;
+    document.getElementById("hiddenToZip").value = document.getElementById("toZip").value;
+    document.getElementById("hiddenFromCity").value = document.getElementById("fromCity").value;
+    document.getElementById("hiddenToCity").value = document.getElementById("toCity").value;
+}
+
+/* Recalc */
+function recalc(){
+    syncContact();
+
+    const movers = parseFloat(document.getElementById("movers").value) || 0;
+    const laborHours = parseFloat(document.getElementById("laborHours").value) || 0;
+    const packingHours = parseFloat(document.getElementById("packingHours").value) || 0;
+    const miles = parseFloat(document.getElementById("miles").value) || 0;
+    const roundTrip = parseFloat(document.getElementById("roundTrip").value) || 0;
+
+    const roomsVal = document.getElementById("rooms").value;
+    const pianoVal = document.getElementById("piano").value;
+
+    const laborCost = laborHours * movers * 130;
+    const packingCost = packingHours * 49;
+    const pianoCost = (pianoVal === "Yes") ? 150 : 0;
+
+    const subtotal = laborCost + packingCost + pianoCost;
+
+    let fuelCost = 0;
+    if(miles < 35){
+        const billableHours = Math.max(roundTrip, 2);
+        fuelCost = billableHours * 130;
+    } else {
+        fuelCost = roundTrip * 150;
+    }
+
+    const total = subtotal + fuelCost;
+    const low = Math.round(total * 0.95);
+    const high = Math.round(total * 1.25);
+
+    document.getElementById("subtotalLabor").innerText = subtotal.toFixed(0);
+    document.getElementById("fuelCost").innerText = fuelCost.toFixed(0);
+    document.getElementById("totalCost").innerText = total.toFixed(0);
+    document.getElementById("lowEnd").innerText = low;
+    document.getElementById("highEnd").innerText = high;
+
+    const range = `$${low} – $${high}`;
+    document.getElementById("quoteRange").innerText = range;
+
+    document.getElementById("hiddenRooms").value = roomsVal;
+    document.getElementById("hiddenQuoteRange").value = range;
+}
+
+/* live recalc */
+document.querySelectorAll("input, select, textarea").forEach(el=>{
+    el.addEventListener("input", recalc);
+});
+
+recalc();
+
+/* Submit */
+document.getElementById("quoteForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+    syncContact();
+    recalc();
+
+    const response = await fetch(e.target.action, {
+        method: "POST",
+        body: new FormData(e.target),
+        headers: { "Accept": "application/json" }
+    });
+
+    if(response.ok){
+        document.getElementById("successMessage").style.display = "block";
+
+        setTimeout(() => {
+            window.location.href = "https://www.deltamoversusa.com/book-online";
+        }, 800);
+    } else {
+        alert("There was a problem sending your request.");
+    }
+});
+</script>
+
+</body>
+</html>
